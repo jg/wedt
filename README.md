@@ -1,19 +1,21 @@
 Dependencies
 -------------
 
-R: 
-install.packages("tm")
-install.packages("Snowball")
-install.packages("SnowballC")
-install.packages("e1071")
-install.packages("plyr")
+R libraries: 
 
-Ruby:
-cd dataset-extractor
-bundle
+    install.packages("tm")
+    install.packages("Snowball")
+    install.packages("SnowballC")
+    install.packages("e1071")
+    install.packages("plyr")
+
+Ruby gems:
+
+    cd dataset-extractor
+    bundle
 
 
 Creating a dataset
 ------------------
 
-./create-dataset.rb
+    ./create-dataset.rb
