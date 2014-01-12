@@ -126,6 +126,18 @@ class CultureLinkCollector < LinkCollector
   end
 end
 
+class BusinessLinkCollector < LinkCollector
+  def category_name
+    'business'
+  end
+end
+
+class EnvironmentLinkCollector < LinkCollector
+  def category_name
+    'environment'
+  end
+end
+
 
 class ContentExtractor
   def extract_content(page)
@@ -170,5 +182,7 @@ class DatasetExtractor
     extract_dataset('sport', size, SportLinkCollector.new, ContentExtractor.new)
     extract_dataset('tech', size, TechLinkCollector.new, ContentExtractor.new)
     extract_dataset('culture', size, CultureLinkCollector.new, ContentExtractor.new)
+    extract_dataset('business', size, BusinessLinkCollector.new, ContentExtractor.new)
+    extract_dataset('environment', size, EnvironmentLinkCollector.new, ContentExtractor.new)
   end
 end
