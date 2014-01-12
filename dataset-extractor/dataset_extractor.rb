@@ -36,7 +36,7 @@ class LinkCollector
   end
 
   def content_present?
-    raise 'Implement in subclass'
+    page.search('.article').size > 0
   end
 
   private
@@ -103,10 +103,6 @@ class SportLinkCollector < LinkCollector
     collect_links_recursively(sport_page, link_selector, is_content_present, max_links)
   end
 
-  def content_present?(page)
-    page.search('.article').size > 0
-  end
-
   private
 
   def sport_page
@@ -130,10 +126,6 @@ class TechLinkCollector < LinkCollector
       link_selector, is_content_present, max_links)
   end
 
-  def content_present?(page)
-    page.search('.article').size > 0
-  end
-
   private
 
   def technology_page
@@ -141,6 +133,27 @@ class TechLinkCollector < LinkCollector
   end
 end
 
+class CultureLinkCollector < LinkCollector
+  def collect(max_links)
+    link_selector = Proc.new do |url|
+      url.include?("/culture/") && !url.include?("/all")
+    end
+
+
+    is_content_present = Proc.new do |page|
+      content_present?(page)
+    end
+
+    collect_links_recursively(culture_page,
+      link_selector, is_content_present, max_links)
+  end
+
+  private
+
+  def culture_page
+    'http://www.theguardian.com/culture'
+  end
+end
 
 
 class ContentExtractor
@@ -185,5 +198,6 @@ class DatasetExtractor
     create_directory('dataset')
     extract_dataset('sport', size, SportLinkCollector.new, ContentExtractor.new)
     extract_dataset('tech', size, TechLinkCollector.new, ContentExtractor.new)
+    extract_dataset('culture', size, CultureLinkCollector.new, ContentExtractor.new)
   end
 end
