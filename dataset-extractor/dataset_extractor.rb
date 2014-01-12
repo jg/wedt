@@ -31,12 +31,29 @@ class Extractor
 end
 
 class LinkCollector
-  def collect
-    raise 'Implement in subclass'
+  def collect(max_links)
+    link_selector = Proc.new do |url|
+      url.include?("/#{category_name}/") && !url.include?("/all")
+    end
+
+    is_content_present = Proc.new do |page|
+      content_present?(page)
+    end
+
+    collect_links_recursively(main_page,
+      link_selector, is_content_present, max_links)
   end
 
   def content_present?
     page.search('.article').size > 0
+  end
+
+  def main_page
+    "http://www.theguardian.com/#{category_name}"
+  end
+
+  def category_name
+    raise 'Implement in subclass'
   end
 
   private
@@ -91,67 +108,21 @@ class LinkCollector
 end
 
 class SportLinkCollector < LinkCollector
-  def collect(max_links)
-    link_selector = Proc.new do |url|
-      url.include?("/sport/") && !url.include?("/all")
-    end
-
-    is_content_present = Proc.new do |page|
-      content_present?(page)
-    end
-
-    collect_links_recursively(sport_page, link_selector, is_content_present, max_links)
-  end
-
-  private
-
-  def sport_page
-    'http://www.theguardian.com/uk/sport'
+  def category_name
+    'sport'
   end
 end
 
 
 class TechLinkCollector < LinkCollector
-  def collect(max_links)
-    link_selector = Proc.new do |url|
-      url.include?("/technology/") && !url.include?("/all")
-    end
-
-
-    is_content_present = Proc.new do |page|
-      content_present?(page)
-    end
-
-    collect_links_recursively(technology_page,
-      link_selector, is_content_present, max_links)
-  end
-
-  private
-
-  def technology_page
-    'http://www.theguardian.com/technology'
+  def category_name
+    'technology'
   end
 end
 
 class CultureLinkCollector < LinkCollector
-  def collect(max_links)
-    link_selector = Proc.new do |url|
-      url.include?("/culture/") && !url.include?("/all")
-    end
-
-
-    is_content_present = Proc.new do |page|
-      content_present?(page)
-    end
-
-    collect_links_recursively(culture_page,
-      link_selector, is_content_present, max_links)
-  end
-
-  private
-
-  def culture_page
-    'http://www.theguardian.com/culture'
+  def category_name
+    'culture'
   end
 end
 
