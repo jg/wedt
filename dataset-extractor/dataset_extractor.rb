@@ -120,12 +120,6 @@ class TechLinkCollector < LinkCollector
   end
 end
 
-class CultureLinkCollector < LinkCollector
-  def category_name
-    'culture'
-  end
-end
-
 class BusinessLinkCollector < LinkCollector
   def category_name
     'business'
@@ -181,7 +175,6 @@ class DatasetExtractor
     create_directory('dataset')
     extract_dataset('sport', size, SportLinkCollector.new, ContentExtractor.new)
     extract_dataset('tech', size, TechLinkCollector.new, ContentExtractor.new)
-    extract_dataset('culture', size, CultureLinkCollector.new, ContentExtractor.new)
     extract_dataset('business', size, BusinessLinkCollector.new, ContentExtractor.new)
     extract_dataset('environment', size, EnvironmentLinkCollector.new, ContentExtractor.new)
   end
