@@ -44,7 +44,7 @@ class LinkCollector
       link_selector, is_content_present, max_links)
   end
 
-  def content_present?
+  def content_present?(page)
     page.search('.article').size > 0
   end
 
