@@ -125,10 +125,11 @@ filterOutSillyColumns <- function(df) {
   return(removeCols(df, NA))
 }
 
-runNaiveBayes <- function (corpora,
-                           sparsenessThreshold,
-                           attributeSelectionFn,
-                           k) {
+computePerformanceMeasuresForAlgorithm <- function (corpora,
+                                                    algorithm,
+                                                    sparsenessThreshold,
+                                                    attributeSelectionFn,
+                                                    k) {
   # attribute selection
   dtm <- createMainDtm(corpora, sparsenessThreshold)
   df <- filterOutSillyColumns(dataFrameFromDocumentTermMatrix(dtm))
@@ -137,10 +138,9 @@ runNaiveBayes <- function (corpora,
   # filter out terms which did not get to be attributes
   df <- selectDfColumns(df, function (colname) { colname %in% attributes })
 
-  print(dim(df))
   folds <- kFoldIndices(dim(df)[1], k)
   measures <- sapply(folds, function (fold) {
-    return (computeClassificationMeasures(df, fold))
+    return (computeClassificationMeasuresOnFold(df, algorithm, fold))
   })
   # add means column to the results
   measures <- data.frame(means=rowMeans(apply(measures, 2, as.numeric)), measures)
@@ -162,10 +162,10 @@ runNaiveBayes <- function (corpora,
 }
 
 # Ref: http://rali.iro.umontreal.ca/rali/sites/default/files/publis/SokolovaLapalme-JIPM09.pdf
-computeClassificationMeasures <- function (df, fold) {
+computeClassificationMeasuresOnFold <- function (df, algorithm, fold) {
   train <- df[fold$train,]
   test <- df[fold$test,]
-  model <- naiveBayes(class ~ ., data=train, laplace = laplace)
+  model <- algorithm(train)
 
   predictions <- predict(model, test[, -1])
   allClasses <- levels(test$class)
@@ -215,33 +215,6 @@ computeClassificationMeasures <- function (df, fold) {
   return(measures)
 }
 
-meanClassificationError <- function (corpora,
-                                     sparsenessThreshold,
-                                     attributeSelectionFn,
-                                     k) {
-  # attribute selection
-  dtm <- createMainDtm(corpora, sparsenessThreshold)
-  df <- dataFrameFromDocumentTermMatrix(dtm)
-  attributes <- attributeSelectionFn(df)
-
-  # filter out terms which did not get to be attributes
-  df <- selectDfColumns(df, function (colname) { colname %in% attributes })
-
-  folds <- kFoldIndices(dim(df)[1], k)
-  errors <- unlist(lapply(folds, function (fold) {
-    return (naiveBayesErrorOnFold(df, fold))
-  }))
-  # print(paste(k, "-fold cross validation mean error: ", mean(errors)))
-  return (mean(errors))
-}
-
-naiveBayesErrorOnFold <- function (df, fold) {
-  train <- df[fold$train,]
-  test <- df[fold$test,]
-  model <- naiveBayes(class ~ ., data=train, laplace = laplace)
-  return(err(test$class, predict(model, test[,-1])))
-}
-
 dataFrameFromDocumentTermMatrix <- function (dtm) {
   class <- rownames(dtm)
   rownames(dtm) <- c()
@@ -259,7 +232,7 @@ selectAttributesChiSquared <- function (df, cutoff) {
   return(rownames(attrs))
 }
 
-testChiSquaredAttributeSelection <- function (corpora) {
+testChiSquaredAttributeSelection <- function (corpora, algorithm) {
   chiSquaredCutOffs <- c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6)
   sparsenessThreshold <- 0.8
 
@@ -268,7 +241,11 @@ testChiSquaredAttributeSelection <- function (corpora) {
       return (selectAttributesChiSquared(df, cutoff))
     }
 
-    results <- runNaiveBayes(corpora, 0.8, attributeSelectionFn, 3)
+    results <- computePerformanceMeasuresForAlgorithm(corpora,
+                                                      algorithm,
+                                                      0.8,
+                                                      attributeSelectionFn,
+                                                      3)
     data <- cbind.data.frame(chiSquaredCutOff=cutoff, results)
     rownames(data) <- c()
     return(data)
@@ -281,10 +258,19 @@ testChiSquaredAttributeSelection <- function (corpora) {
 
 
 # dirs <- c('alt.atheism', 'comp.graphics', 'comp.os.ms-windows.misc', 'comp.sys.ibm.pc.hardware', 'comp.sys.mac.hardware', 'comp.windows.x', 'misc.forsale', 'rec.autos', 'rec.motorcycles', 'rec.sport.baseball', 'rec.sport.hockey', 'sci.crypt', 'sci.electronics', 'sci.med', 'sci.space', 'soc.religion.christian', 'talk.politics.guns', 'talk.politics.mideast', 'talk.politics.misc', 'talk.religion.misc')
-dirs <- c('sport', 'tech')
+dirs <- c('sport', 'tech', 'business', 'environment')
 
 corpora <- prepCorpora(dirs)
-results <- testChiSquaredAttributeSelection(corpora)
+
+naiveBayesAlgorithm <- function (trainingSet) {
+  return (naiveBayes(class ~ ., data=trainingSet, laplace = laplace))
+}
+resultsNB <- testChiSquaredAttributeSelection(corpora, naiveBayesAlgorithm)
+
+SVMAlgorithm <- function (trainingSet) {
+  return (svm(class ~ ., data=trainingSet, laplace = laplace))
+}
+resultsSVM <- testChiSquaredAttributeSelection(corpora, SVMAlgorithm)
 ## attributeSelectionFn = function (df) {
 ##   return (selectAttributesChiSquared(df, chiSquaredCutOff))
 ## }
